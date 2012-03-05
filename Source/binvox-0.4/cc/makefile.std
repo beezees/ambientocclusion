@@ -1,0 +1,187 @@
+
+#
+# compiler, make (both Gnu make), object files
+#
+ifeq ($(OS), WINDOWS)
+CXX =		g++
+CC =		g++
+MAKE =		make
+OUTPUT =	-o $(TARGET)
+OBJECTS =	$(CCSRCS:.cc=.obj) $(CSRCS:.c=.obj)
+OBJECTS :=	$(OBJECTS:.C=.obj)
+endif
+
+ifeq ($(OS), LINUX)
+CXX =		g++
+CC =		g++
+MAKE =		gmake
+OUTPUT =	-o $(TARGET)
+OBJECTS =	$(CCSRCS:.cc=.o) $(CSRCS:.c=.o)
+OBJECTS :=	$(OBJECTS:.C=.o)
+OBJECTS :=	$(OBJECTS:.cpp=.o)
+endif
+
+
+
+#
+# flags
+#
+ifeq ($(OS), WINDOWS)
+# DEBUG =		-Zi
+DEBUG =		-g
+OPTIMIZE =	-O2
+DEFINES =	-DWINDOWS_NT $(USER_DEFINES)
+# necessary because the symlink to cc from ~/include doesn't work in windows
+EXTRA_INCL =	-I $(SRCHOME)/
+endif
+
+
+
+ifeq ($(OS), LINUX)
+DEBUG =		-g
+OPTIMIZE =	-O2 -march=pentium
+WARNINGS =	-Wno-conversion -Wno-non-virtual-dtor -Wno-unused-variable \
+		-Wno-sign-compare
+FLAGS =		
+DEFINES =	-DLINUX $(USER_DEFINES)
+
+ifeq ($(OPENGL), 1)
+FLAGS +=	-DOPENGL
+endif
+
+endif
+
+
+
+ifeq ($(VENDOR), apple)
+
+DEFINES =	-DMAC_OSX -DLINUX $(USER_DEFINES)
+EXTRA_INCL =	-I /usr/X11R6/include
+
+endif
+
+
+
+#
+# paths
+#
+INCLUDEPATH =	$(SRCHOME)/include $(EXTRA_INCL)
+LIBPATH =	$(SRCHOME)/lib
+
+ifeq ($(OS), LINUX)
+X11_LIBPATH =	-L /usr/X11R6/lib
+endif
+
+ifeq ($(VENDOR), apple)
+X11_LIBPATH =	-L/usr/X11R6/lib
+endif
+
+
+
+
+#
+# default is with debug info, unless NODEBUG is set to 1
+#
+ifeq ($(NODEBUG), 1)
+DEBUG =
+else
+OPTIMIZE =
+endif
+
+
+CFLAGS =	$(DEBUG) $(PROFILE) $(FLAGS) $(DEFINES) $(RELEASE) $(OPTIMIZE) $(WARNINGS) $(USER_FLAGS) -I $(INCLUDEPATH) -I . 
+CXXFLAGS =	$(CFLAGS)
+
+
+
+#
+# libraries
+#
+
+#
+# Windows
+#
+ifeq ($(OS), WINDOWS)
+OPENGL_LIBS =	-lglut32 -lglu32 -lopengl32
+WIN_LIBS =	-luser32 -lgdi32 -ladvapi32
+
+STD_LIBS =	-lwsock32 
+# -llibc
+
+LDFLAGS =	-L $(LIBPATH) -L /cygdrive/c/cygwin/lib
+
+endif
+
+
+#
+# Linux
+#
+ifeq ($(OS), LINUX)
+
+OPENGL_LIBS =	-lglut -lGLU -lGL
+WIN_LIBS =	-lXmu -lXt -lXext -lX11 -lpthread -ldl
+
+STD_LIBS =	-lm
+
+ifeq ($(STATIC), 1)
+LDFLAGS =	-L $(LIBPATH) -static
+else
+LDFLAGS = 	-L $(LIBPATH)
+endif
+
+endif
+
+ifeq ($(VENDOR), apple)
+OPENGL_LIBS =	-lGLU -lGL -framework GLUT -framework OpenGL
+LDFLAGS =	-L$(LIBPATH)
+endif
+
+
+
+ifneq ($(OPENGL), 1)
+OPENGL_LIBS =
+endif
+ifneq ($(WIN_SYSTEM), 1)
+WIN_LIBS =
+endif
+
+LIBS =		$(USER_LIBS) $(PKG_LIBS) $(OPENGL_LIBS) $(X11_LIBPATH) $(WIN_LIBS) \
+		$(COMMON_LIBS) $(STD_LIBS)
+
+
+#
+# gnu make implicit rules
+#
+
+.SUFFIXES:	.cc .C
+
+ifeq ($(OS), WINDOWS)
+
+%.obj:	%.cc
+	$(CXX) $(CXXFLAGS) -c $< -o $(<:.cc=.obj)
+
+%.obj:	%.C
+	$(CXX) $(CXXFLAGS) -c $< -o $(<:.C=.obj)
+
+%.obj:	%.c
+	$(CXX) $(CXXFLAGS) -c $< -o $(<:.c=.obj)
+
+else
+
+ifneq ($(CGAL), 1)
+
+.cc.o:
+	$(CXX) $(CXXFLAGS) -c $< -o $(<:.cc=.o)
+
+.C.o:	
+	$(CXX) $(CXXFLAGS) -c $< -o $(<:.C=.o)
+
+.c.o:
+	$(CC) $(CFLAGS) -c $< -o $(<:.c=.o)
+
+endif
+
+endif
+
+
+

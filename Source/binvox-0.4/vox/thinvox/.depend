@@ -1,0 +1,50 @@
+thinvox.o: thinvox.cc ../../include/cc/voxel/VoxelFile.h \
+ ../../include/cc/voxel/VoxelRef.h ../../include/cc/voxel/Voxels.h \
+ ../../include/cc/voxel/typedefs.h ../../include/cc/math/common.h \
+ ../../include/cc/math/Vector.h ../../include/cc/math/common.h \
+ ../../include/cc/math/Matrix.h ../../include/cc/voxel/VoxelFilter.h \
+ ../../include/cc/voxel/PalagyiFilter.h \
+ ../../include/cc/voxel/VoxelFilter.h ../../include/cc/voxel/Templates.h \
+ ../../include/cc/voxel/Template.h ../../include/cc/time/WallTimer.h \
+ version.h
+common.o: ../../cc/math/common.cc ../../cc/math/common.h
+Vector.o: ../../cc/math/Vector.cc ../../cc/math/Vector.h \
+ ../../cc/math/common.h ../../cc/math/Matrix.h ../../cc/math/MyRandom.h
+Matrix.o: ../../cc/math/Matrix.cc ../../cc/math/Matrix.h \
+ ../../cc/math/common.h ../../cc/math/Vector.h
+MyRandom.o: ../../cc/math/MyRandom.cc ../../cc/math/MyRandom.h \
+ ../../cc/math/common.h
+WallTimer.o: ../../cc/time/WallTimer.cc ../../cc/time/WallTimer.h
+MyTime.o: ../../cc/time/MyTime.cc ../../cc/time/MyTime.h
+VoxelFile.o: ../../cc/voxel/VoxelFile.cc ../../include/cc/time/MyTime.h \
+ ../../cc/voxel/VoxelFile.h ../../cc/voxel/VoxelRef.h \
+ ../../cc/voxel/Voxels.h ../../cc/voxel/typedefs.h \
+ ../../include/cc/math/common.h ../../include/cc/math/Vector.h \
+ ../../include/cc/math/common.h ../../include/cc/math/Matrix.h
+VoxelFilter.o: ../../cc/voxel/VoxelFilter.cc ../../cc/voxel/VoxelFilter.h \
+ ../../cc/voxel/VoxelRef.h ../../cc/voxel/Voxels.h \
+ ../../cc/voxel/typedefs.h ../../include/cc/math/common.h \
+ ../../include/cc/math/Vector.h ../../include/cc/math/common.h \
+ ../../include/cc/math/Matrix.h
+PalagyiFilter.o: ../../cc/voxel/PalagyiFilter.cc \
+ ../../cc/voxel/PalagyiFilter.h ../../cc/voxel/VoxelFilter.h \
+ ../../cc/voxel/VoxelRef.h ../../cc/voxel/Voxels.h \
+ ../../cc/voxel/typedefs.h ../../include/cc/math/common.h \
+ ../../include/cc/math/Vector.h ../../include/cc/math/common.h \
+ ../../include/cc/math/Matrix.h ../../cc/voxel/Templates.h \
+ ../../cc/voxel/Template.h
+Template.o: ../../cc/voxel/Template.cc ../../cc/voxel/Template.h \
+ ../../cc/voxel/typedefs.h
+Templates.o: ../../cc/voxel/Templates.cc ../../cc/voxel/Templates.h \
+ ../../cc/voxel/Template.h ../../cc/voxel/typedefs.h
+VoxelRef.o: ../../cc/voxel/VoxelRef.cc ../../cc/voxel/VoxelRef.h \
+ ../../cc/voxel/Voxels.h ../../cc/voxel/typedefs.h \
+ ../../include/cc/math/common.h ../../include/cc/math/Vector.h \
+ ../../include/cc/math/common.h ../../include/cc/math/Matrix.h
+Voxels.o: ../../cc/voxel/Voxels.cc ../../include/GL/glut.h \
+ ../../cc/voxel/Voxels.h ../../cc/voxel/typedefs.h \
+ ../../include/cc/math/common.h ../../include/cc/math/Vector.h \
+ ../../include/cc/math/common.h ../../include/cc/math/Matrix.h \
+ ../../cc/voxel/VoxelRef.h ../../include/cc/ui/GLwindow.h \
+ ../../include/cc/ui/opengl.h ../../include/cc/ui/CameraList.h \
+ ../../include/cc/ui/Camera.h ../../include/cc/math/MyRandom.h
