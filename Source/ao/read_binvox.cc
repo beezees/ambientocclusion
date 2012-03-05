@@ -107,6 +107,22 @@ int read_binvox(string filespec)
   input->close();
   cout << "  read " << nr_voxels << " voxels" << endl;
 
+  // 
+  // voxel coords
+  // 
+  ofstream vox_coords("vox_coords.dat", ios::out);
+  for(int i=0; i < depth; i++) {
+    for(int k=0; k < height; k++) {
+       for(int j=0; j < width; j++) {
+         int index = i * width * height + k * width + j;
+         if (voxels[index]) {
+	    vox_coords << i << " " << j << " " << k << endl;
+         }
+       }
+     }
+  }
+  vox_coords.close();
+
   return 1;
 
 }
