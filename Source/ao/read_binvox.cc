@@ -1,7 +1,7 @@
 // read_binvox.cc
 // Description: This example program reads a .binvox file and writes an ASCII version of the same file called "voxels.txt"
 // 0 = empty voxel
-// 1 = filled voxe;
+// 1 = filled voxel;
 // The x-axis is the most significant axis, then the z-axis, then the y-axis.
 
 
