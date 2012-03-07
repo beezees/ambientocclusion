@@ -22,5 +22,10 @@ ehthumbs.db
 Icon?
 Thumbs.db
 
+<<<<<<< HEAD
 #Outputs
 *.binvox
+=======
+# Binvox
+.binvox
+>>>>>>> upstream/master

@@ -1,0 +1,29 @@
+
+include $(SRCHOME)/cc/makefile.std
+
+ifeq ($(OS), WINDOWS)
+LIB =		$(NAME).lib
+VPATH =		..\file ..\general ..\math ..\gl
+else
+LIB =		lib$(NAME).a
+VPATH =		$(SRCHOME)/cc/file:$(SRCHOME)/cc/general:$(SRCHOME)/cc/gl:$(SRCHOME)/cc/math
+endif
+
+#
+# rules
+#
+
+$(LIB):	$(OBJECTS)
+	rm -f $(LIB)
+	ar ur $(LIB) $(OBJECTS)
+ifeq ($(OS), WINDOWS)
+	cp $(LIB) $(SRCHOME)/lib
+endif
+
+
+clean:
+	rm -f $(OBJECTS)
+	rm -f $(SRCHOME)/lib/$(LIB)
+
+
+
