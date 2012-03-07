@@ -36,7 +36,7 @@
 # Add source files here
 EXECUTABLE	:= aox
 # Cuda source files (compiled with cudacc)
-CUFILES_sm_20	:= read_vox2gpu_ker.cu
+CUFILES_sm_20	:= read_vox2gpu.cu
 # C/C++ source files (compiled with gcc / c++)
 CCFILES		:= read_binvox.cc
 
@@ -47,4 +47,6 @@ OMIT_SHRUTIL_LIB := 1
 ###############################################################################
 # Rules and targets
 
-include ../../common/common.mk
+include $(CUDA_SKD_PATH)/C/common/common.mk
+##include ../../common/common.mk
+#include /home/calinacopos/NVIDIA_GPU_Computing_SDK/C/common/common.mk
