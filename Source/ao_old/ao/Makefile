@@ -33,32 +33,20 @@
 #
 ###############################################################################
 
-CUDA_SDK_PATH ?= /home/calinacopos/NVIDIA_GPU_Computing_SDK
-CUDA_INSTALL_PATH ?= /usr/local/cuda
-
-CUBIN_ARCH_FLAG :=
-CXXFLAGS := -I. -I$(CUDA_INSTALL_PATH)/include -I$(CUDA_SDK_PATH)/CUDALibraries/common/inc -I$(CUDA_SDK_PATH)/shared/inc/
-CUDACCFLAGS := -I. -I$(CUDA_INSTALL_PATH)/include -I$(CUDA_SDK_PATH)/CUDALibraries/common/inc -I$(CUDA_SDK_PATH)/shared/inc/
-
 # Add source files here
 EXECUTABLE	:= aox
 # Cuda source files (compiled with cudacc)
 CUFILES_sm_20	:= read_vox2gpu.cu
 # C/C++ source files (compiled with gcc / c++)
-CCFILES		:= read_binvox.cpp cuda_helpers.cpp
+CCFILES		:= read_binvox.cc
 
 # Do not link with CUTIL and SHRUTIL
 OMIT_CUTIL_LIB   := 1
 OMIT_SHRUTIL_LIB := 1
-USEGLLIB         := 0
-USEGLUT          := 0
-USERENDERCHECKGL := 0
-noinline         := 1
-verbose := 1
 
 ###############################################################################
 # Rules and targets
 
-include $(CUDA_SDK_PATH)/C/common/common.mk
-
-
+include $(CUDA_SKD_PATH)/C/common/common.mk
+##include ../../common/common.mk
+#include /home/calinacopos/NVIDIA_GPU_Computing_SDK/C/common/common.mk
