@@ -42,10 +42,6 @@ static float scale;
 static char *sSDKname = "AOX";
 byte *voxels = 0;
 
-// zero copy host to device ??? good for read and/or write only once
-// read from cpu to gpu 
-// are we reading cpu - gpu global memory - texture memory or is it direct?
-
 //////////////////////////////////////////////////////////////////////////////////////////////////////
 // CUDA Helper Functions
 
@@ -292,6 +288,11 @@ void create_data()
 
 int main(int argc, char** argv) 
 {
+  //argv[1] = "bunny.binvox";
+  if (!read_binvox(argv[1])) {
+    cout << "Error reading [" << argv[1] << "]" << endl << endl;
+    exit(1);
+  }
   shrQAStart(argc, argv);
 
   create_data(); 
