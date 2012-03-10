@@ -3,7 +3,7 @@
 //EEC277 Final Project
 #include <GL/glut.h>
 #include <math.h>
-#include <include/original_glm/glm.h>
+#include "include/glm/glm.h"
 
 int winWidth = 800;
 int winHeight = 600;
@@ -38,7 +38,7 @@ void display(void)
 
 	glMatrixMode(GL_MODELVIEW);	//Matrix describing transformations
 	glLoadIdentity();
-	gluLookAt(100, 100, 100, 0, 0, 0, 0, 1, 0);
+	gluLookAt(10, 10, 10, 0, 0, 0, 0, 1, 0);
 
 	//Lighting Stuff:
 /*	float light0Direction[] = {10.0, 200.0, 100.0, 0.0};	//Distant light
