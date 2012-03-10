@@ -1,10 +1,16 @@
+//scene.cpp
 //Calina Copos & Afton Geil
-//EEC207 Project
+//EEC277 Final Project
 #include <GL/glut.h>
 #include <math.h>
+#include <include/original_glm/glm.h>
 
-int winWidth = 1000;
-int winHeight = 750;
+int winWidth = 800;
+int winHeight = 600;
+
+int displayList;
+
+GLMmodel* bunny;
 
 void init(void)
 {
@@ -44,8 +50,7 @@ void display(void)
 	glLightfv(GL_LIGHT0, GL_SPECULAR, blackColour);
 	glLightfv(GL_LIGHT0, GL_DIFFUSE, grayColour);
 */
-	glColor4f(1.0, 0.0, 1.0, 1.0);
-	glutSolidTeapot(20);
+	glCallList(displayList);
 
 	glFlush();
 	glutSwapBuffers();
@@ -58,8 +63,18 @@ int main(int argc, char** argv)
 	glutInitWindowPosition(100, 100);
 	glutInitWindowSize(winWidth, winHeight);
 	glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH);
-	glutCreateWindow("Testing Teapot");
+	glutCreateWindow("Importing .obj");
 	init();
+
+	bunny = (GLMmodel*)malloc(sizeof(GLMmodel));
+	bunny = glmReadOBJ("./objs/bunny.obj");
+
+	displayList = glGenLists(1);
+	glNewList(displayList, GL_COMPILE);
+		glColor4f(1.0, 0.0, 1.0, 1.0);
+		glmDraw(bunny, GLM_SMOOTH);
+	glEndList();
+
 	//Callback functions:
 	glutDisplayFunc(display);
 	glutMainLoop();
