@@ -7,12 +7,18 @@
 #include <stdio.h>
 #include <iostream>
 
+//Window dimensions:
 int winWidth = 800;
 int winHeight = 600;
 
+//Display list for the model:
 int displayList;
 
+//Object model:
 GLMmodel* model;
+
+//Number of divisions in each direction for voxel grid:
+int grid = 256;
 
 void init(void)
 {
@@ -106,6 +112,22 @@ void convertToObj(int x, int y, double obj[])
     return;
 }
 
+void convertToVoxel(double objx, double objy, double objz, GLfloat xmin, GLfloat xmax, GLfloat ymin, GLfloat ymax, GLfloat zmin, GLfloat zmax, double vox[])
+{
+    double voxSizeX, voxSizeY, voxSizeZ;
+
+    //Find dimensions of a single voxel:
+    voxSizeX = (xmax - xmin)/grid;
+    voxSizeY = (ymax - ymin)/grid;
+    voxSizeZ = (zmax - zmin)/grid;
+
+    //Coordinates of containing voxel:
+    vox[0] = floor(objx/voxSizeX);
+    vox[1] = floor(objy/voxSizeY);
+    vox[2] = floor(objz/voxSizeZ);
+
+    return;
+}
 
 int main(int argc, char** argv)
 {
@@ -171,18 +193,26 @@ int main(int argc, char** argv)
 		glmList(model, GLM_NONE);
 	glEndList();
 
-	//TODO: Convert from window location to closest voxel vertex location:
+	//Convert from window location to closest voxel vertex location:
 	int pixelX, pixelY;
-	pixelX = 650;
-	pixelY = 547;
+	pixelX = 236;
+	pixelY = 159;
 	double obj[3];
 	double objx, objy, objz;
 	convertToObj(pixelX, pixelY, obj);
 	objx = obj[0];
 	objy = obj[1];
 	objz = obj[2];
-	std::cout << "Object Space Values:";
-	std::cout << objx << "\n" << objy << "\n" << objz <<"\n";
+	std::cout << "Object space values: \n";
+	std::cout << objx << "\n" << objy << "\n" << objz << "\n";
+	double vox[3];
+	double voxX, voxY, voxZ;
+	convertToVoxel(objx, objy, objz, xObjMin, xObjMax, yObjMin, yObjMax, zObjMin, zObjMax, vox);
+	voxX = vox[0];
+	voxY = vox[1];
+	voxZ = vox[2];
+	std::cout << "Voxel space values: \n";
+	std::cout << voxX << "\n" << voxY << "\n" << voxZ << "\n";
 
 	//Callback functions:
 	glutDisplayFunc(display);
