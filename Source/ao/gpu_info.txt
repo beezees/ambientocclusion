@@ -1,0 +1,11 @@
+midas.ece.ucdavis.edu
+
+Tesla C2070 
+14 SM (Compute 2.0)
+- L1 texture cache per SM: 12kB
+- shared memory per SM: 16kB or 64kB(?)
+- warp: 32
+- thread/block: 1024
+- cuda cores per SM: 32 (total 448)
+- registers per SM: 32kB
+
