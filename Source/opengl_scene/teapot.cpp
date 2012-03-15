@@ -3,6 +3,9 @@
 #include <string.h>
 #include <stdlib.h>
 #include <GL/glut.h>
+#include <fstream>
+
+using namespace std;
 
 GLenum doubleBuffer;
 
@@ -236,7 +239,7 @@ void convertToObj(int xconv, int yconv, double obj[])
     glReadPixels( xconv, viewport[3]-yconv, 1, 1, GL_DEPTH_COMPONENT, GL_FLOAT, &winz);
 
     gluUnProject( xconv, viewport[3]-yconv, winz, modelview, projection, viewport, &objx, &objy, &objz);
-    printf("In world coords (x,y,z) = %f %f %f \n", objx, objy, objz);
+//    printf("In world coords (x,y,z) = %f %f %f \n", objx, objy, objz);
 
     obj[0] = objx;
     obj[1] = objy;
@@ -262,11 +265,15 @@ int main(int argc, char **argv)
 
 	double Obj[3];
 	int pixelx, pixely;
+	ofstream objSpace;
+	objSpace.open("objSpace.dat", ios::out);
 	for (pixelx = 0; pixelx < 300; pixelx++){
 		for (pixely = 0; pixely < 300; pixely++){
-			 convertToObj(pixelx, pixely, Obj);
+			convertToObj(pixelx, pixely, Obj);
+			objSpace << Obj[0] << "\t" << Obj[1] << "\t" << Obj[2] << endl;
 		}
 	}
+	objSpace.close();
 
     glutReshapeFunc(Reshape);
     glutKeyboardFunc(Key);
