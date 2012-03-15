@@ -315,27 +315,82 @@ int main(int argc, char** argv)
   }
 
   // allocate host memory for voxel data
-  unsigned int width = W, height = H, num_layers = D;
-  unsigned int mem_size = width * height * num_layers * sizeof(float);
+  unsigned int width = W, height = H, depth = D;
+  unsigned int mem_size = width * height * depth * sizeof(float);
   float *voxel_data = (float*) malloc(mem_size);
 
+  // allocate host memory for voxelized screen pixels // CC
+  unsigned int w = W, h = H, d = D;
+  unsigned int mem_size_a = w * h * d * 3 * sizeof(float);
+  float a[256][256][256][3];
+
+  // allocate host memory for neighboring values // CC
+  unsigned int mem_size_b = w * h * d * 3 * 512 * sizeof(float);
+  //float *b = (float*) malloc(mem_size_b);
+  float b[256][256][256][3];
+
   // generate input data for layered texture
-  for (unsigned int layer = 0; layer < num_layers; layer++) {
+  for (unsigned int layer = 0; layer < depth; layer++) {
   	for (int i = 0; i < (int)(width * height); i++) {
 	  voxel_data[layer*width*height + i] = (float)voxels[i];
     }
   }
 
-  // this is the expected transformation of the input data (the expected output)
-  float *voxel_data_ref = (float*) malloc(mem_size);
+  // generate input for voxelized screen pixels // CC
+  // TODO
+  for (int k = 0; k < 256; k++) {
+	for (int j = 0; j < 256; j++) {
+		for (int i = 0; i < 256; i++) {
+		  a[i][j][k][0] = 1.0;
+		  a[i][j][k][1] = 1.0;
+		  a[i][j][k][2] = 1.0;
+		  b[i][j][k][0] = 1.0;
+		  b[i][j][k][1] = 1.0;
+		  b[i][j][k][2] = 1.0;
+		}
+	}
+  } 
+  
+  /*// generate input for neighborhood matrix // CC
+  int b_i = -1, b_j = -1, b_k = -1;
+  int incr = -4;
+  for (unsigned int idz = 0; idz < 8 * d; idz++) {
+	if (idz % 8 == 0) { b_i++; incr = -4; }
+	for (unsigned int idy = 0; idy < 8 * h; idy++) {
+	   if (idy % 8 == 0) { b_j++; incr = -4; }
+	   for (unsigned int idx = 0; idx < 8 * w; idx++) {
+	 	if (idx % 8 == 0) { b_k++; incr = -4; }	
+		b[idx][idy][idz][0] = a[b_i][b_j][b_k][0] + 0.5f - incr;
+		b[idx][idy][idz][1] = a[b_i][b_j][b_k][1] + 0.5f - incr;
+		b[idx][idy][idz][2] = a[b_i][b_j][b_k][2] + 0.5f - incr; 
+		incr++;
+	   }
+	}
+  }*/
+
+  // this is the expected transformatiion of the input data (the expected output)
+  /*float *voxel_data_ref = (float*) malloc(mem_size);
   for (unsigned int layer = 0; layer < num_layers; layer++)
-    for (int i = 0; i < (int)(width * height); i++)
-      voxel_data_ref[layer*width*height + i] = -voxel_data[layer*width*height + i] + layer;
+    	for (int i = 0; i < (int)(width * height); i++)
+      	  voxel_data_ref[layer*width*height + i] = -voxel_data[layer*width*height + i] + layer;*/
 
-  // allocate mem for the result on host side
-  float* voxel_odata = (float*) malloc(mem_size);
+  // allocate mem for the result on host side // CC
+  float* voxel_odata = (float*) malloc(mem_size_a);
+  
+  // this is the expected result
+  //float* voxel_data_ref = (float*) malloc(mem_size_a);
+  float voxel_data_ref[256][256][256][3];
+  for (int k = 0; k < 256; k++) {
+        for (int j = 0; j < 256; j++) {
+                for (int i = 0; i < 256; i++) {
+                  voxel_data_ref[i][j][k][0] = 1;
+                  voxel_data_ref[i][j][k][1] = 1;
+                  voxel_data_ref[i][j][k][2] = 1;
+                }
+        }
+  }
 
-  run_kernel(width, height, num_layers, mem_size, voxel_data, voxel_odata);
+  run_kernel(width, height, depth, w, h, d, mem_size, mem_size_a, mem_size_b, a, b, voxel_data, voxel_odata);
 
   // write regression file if necessary
   if( checkCmdLineFlag( argc, (const char **)argv, "regression") ) {
@@ -346,14 +401,16 @@ int main(int argc, char** argv)
   {
     printf("Comparing kernel output to expected data\n");
     #define MIN_EPSILON_ERROR 5e-3f
-    bResult = compareData(voxel_odata, voxel_data_ref, width * height * num_layers, MIN_EPSILON_ERROR, 0.0f);
+    bResult = compareData(voxel_odata, voxel_data_ref, width * height * depth, MIN_EPSILON_ERROR, 0.0f);
   }
 
   // cleanup memory
   free(voxel_data);
   free(voxel_data_ref);
+  //free(a); free(b);
   free(voxel_odata);
 
   cudaDeviceReset();
   shrQAFinishExit(argc, (const char **)argv, (bResult ? QA_PASSED : QA_FAILED) );
+  //shrQAFinishExit(argc, (const char **)argv, QA_PASSED);
 }
