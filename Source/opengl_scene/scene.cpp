@@ -29,6 +29,7 @@ void init(void)
 	glClearColor(1.0f, 1.0f, 1.0f, 1.0f);	//White background
 	
 	glEnable(GL_DEPTH_TEST);	//Activate depth visibiltiy routines
+	glDepthRange(0,1);		//Maps window coordinate z to range [0,1]
 
 	glEnable(GL_BLEND);		//Colour blending enabled
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -44,13 +45,21 @@ void display(void)
 {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+	float zPlane = 1;
+	float lower, upper;
+	float near, far;
+	lower = (zPlane == 0) ? zPlane - 10:(zPlane - 2*(zPlane < 0 ? -zPlane : zPlane));
+	upper = (zPlane == 0) ? zPlane + 10:(zPlane + 2*(zPlane < 0 ? -zPlane : zPlane));
+	near = upper - zPlane - .00001;
+	far = upper - zPlane + .00001;
+
 	glMatrixMode(GL_PROJECTION);
         glLoadIdentity();
-        gluPerspective(50.0, 1.0, 1.0, 10000.0);        //Set the field-of-view angle, aspect ratio, near and far clipping planes relative to camera position defined in gluLookAt.
+        gluPerspective(50.0, 1.0, near, far);        //Set the field-of-view angle, aspect ratio, near and far clipping planes relative to camera position defined in gluLookAt.
 
 	glMatrixMode(GL_MODELVIEW);	//Matrix describing transformations
 	glLoadIdentity();
-	gluLookAt(5, 5, 5, 0, 0, 0, 0, 1, 0);	//point to look from, at, upward direction
+	gluLookAt(0, 0, upper, 0, 0, lower, 0, 1, 0);	//point to look from, at, upward direction
 
 	//Lighting Stuff:
 /*	float light0Direction[] = {10.0, 200.0, 100.0, 0.0};	//Distant light
@@ -106,43 +115,44 @@ int IntArrayMin(int array[], int numElements)
 
 void convertToObj(int x, int y, double obj[])
 {
-    int viewport[4];
-    double modelview[16];
-    double projection[16];
-    float z;
-    double objx, objy, objz;
+	int viewport[4];
+	double modelview[16];
+	double projection[16];
+	float z;
+	double objx, objy, objz;
 
-    glGetDoublev( GL_MODELVIEW_MATRIX, modelview );
-    glGetDoublev( GL_PROJECTION_MATRIX, projection );
-    glGetIntegerv( GL_VIEWPORT, viewport );
+	glGetDoublev( GL_MODELVIEW_MATRIX, modelview );
+	glGetDoublev( GL_PROJECTION_MATRIX, projection );
+	glGetIntegerv( GL_VIEWPORT, viewport );
 
-    glReadPixels( x, viewport[3]-y, 1, 1, GL_DEPTH_COMPONENT, GL_FLOAT, &z);
+	glReadPixels( x, viewport[3]-y, 1, 1, GL_DEPTH_COMPONENT, GL_FLOAT, &z);
 
-    gluUnProject( x, viewport[3]-y, z, modelview, projection, viewport, &objx, &objy, &objz);
-    //printf("In world coords (x,y,z) = %f %f %f \n", objx, objy, objz);
+	gluUnProject( x, viewport[3]-y, z, modelview, projection, viewport, &objx, &objy, &objz);
+//	printf("In world coords (x,y,z) = %f %f %f \n", objx, objy, objz);
+//	cout << objx << " " << objy << " " << objz << "\n";
 
-    obj[0] = objx;
-    obj[1] = objy;
-    obj[2] = objz;
+	obj[0] = objx;
+	obj[1] = objy;
+	obj[2] = objz;
 
-    return;
+	return;
 }
 
 void convertToVoxel(double objx, double objy, double objz, GLfloat xmin, GLfloat xmax, GLfloat ymin, GLfloat ymax, GLfloat zmin, GLfloat zmax, int vox[])
 {
-    double voxSizeX, voxSizeY, voxSizeZ;
+	double voxSizeX, voxSizeY, voxSizeZ;
 
-    //Find dimensions of a single voxel:
-    voxSizeX = (xmax - xmin)/grid;
-    voxSizeY = (ymax - ymin)/grid;
-    voxSizeZ = (zmax - zmin)/grid;
+	//Find dimensions of a single voxel:
+	voxSizeX = (xmax - xmin)/grid;
+	voxSizeY = (ymax - ymin)/grid;
+	voxSizeZ = (zmax - zmin)/grid;
 
-    //Coordinates of containing voxel:
-    vox[0] = floor((objx-xmin)/voxSizeX);
-    vox[1] = floor((objy-ymin)/voxSizeY);
-    vox[2] = floor((objz-zmin)/voxSizeZ);
+	//Coordinates of containing voxel:
+	vox[0] = floor((objx-xmin)/voxSizeX);
+	vox[1] = floor((objy-ymin)/voxSizeY);
+	vox[2] = floor((objz-zmin)/voxSizeZ);
 
-    return;
+	return;
 }
 
 int main(int argc, char** argv)
@@ -152,7 +162,7 @@ int main(int argc, char** argv)
 	glutInitWindowPosition(100, 100);
 	glutInitWindowSize(winWidth, winHeight);
 	glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH);
-	glutCreateWindow("Importing .obj");
+	glutCreateWindow("So fluffyyyyyy!!!");
 	init();
 
 	//Import the .obj file:
@@ -213,10 +223,8 @@ int main(int argc, char** argv)
 	string str;
 	string coord;
 	int item;
-	int (*voxels)[256][256];	//array of all possible voxel locations containing their status (empty = 0, filled =1)
+	int (*voxels)[256][256];	//matrix of all possible voxel locations containing their status (empty = 0, filled =1)
 	voxels = new int[256][256][256];
-//	int* voxels;
-//	voxels = (int*)calloc(256*256*256, sizeof(int));
 	ifstream vox_coords;
 	vox_coords.open("vox_coords.dat", ios::in);
 	int coordIndex = 0;
@@ -262,16 +270,14 @@ int main(int argc, char** argv)
         		objx = obj[0];
 		        objy = obj[1];
 		        objz = obj[2];
-		        convertToVoxel(objx, objy, objz, xObjMin, xObjMax, yObjMin, yObjMax, zObjMin, zObjMax, vox);
+/*		        convertToVoxel(objx, objy, objz, xObjMin, xObjMax, yObjMin, yObjMax, zObjMin, zObjMax, vox);
 		        voxX = vox[0];
 		        voxY = vox[1];
 		        voxZ = vox[2];
-//			if (voxZ < 0) voxZ = 145;
-//			if (voxZ > 256) voxZ = 176;
 			int test = voxels[voxX][voxY][voxZ];
 			filledVox << test << "\n";
-//		        cout << voxX << " " << voxY << " " << voxZ << "\n";
-/*			if (voxels[voxX][voxY][voxZ] == 1){
+		        cout << voxX << " " << voxY << " " << voxZ << "\n";
+			if (voxels[voxX][voxY][voxZ] == 1){
 				//write voxel coordinates to file
 				filledVox << voxX << " " << voxY << " " << voxZ << endl;
 				numVox++;
@@ -295,7 +301,6 @@ int main(int argc, char** argv)
 	glutMainLoop();
 
 	glmDelete(model);
-//	free(voxels);
 	delete [] voxels;
 
 	return 0;
