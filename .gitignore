@@ -22,6 +22,9 @@ ehthumbs.db
 Icon?
 Thumbs.db
 
+#Teapot test scenes
+teapotScenes
+
 <<<<<<< HEAD
 #Outputs
 *.binvox
