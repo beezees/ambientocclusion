@@ -286,6 +286,67 @@ void create_data()
   cout << "done" << endl << endl;
 }
 
+int** read_input_data(const char* ifilename, int *size_a)
+{
+  int **a =  NULL;
+  ifstream *input = new ifstream(ifilename, ios::in);
+  char line[256];
+  int i = 0;
+
+  // not very nice: read the file in two-passes:
+  // first to get the size for memory allocation purposes and
+  // second time to read the data
+
+  // first pass:
+  if(!input) {
+    cerr << "Error: when opening the file " << ifilename << endl;
+    exit(1);
+  } 
+  while(!input->eof()) {
+    input->getline(line, 255);
+    (*size_a)++;
+  }
+  *size_a -= 1;
+
+  // rewind at the beginning
+  input->clear();
+  input->seekg(0, ios::beg);
+
+  // allocate memory for a
+  a = (int**) malloc(*size_a * sizeof(int *));
+  if(a == NULL) {
+    cerr << "Error: out of memory" << endl;
+    exit(1);
+  }
+  for(int i = 0; i < *size_a; i++) {
+    a[i] = (int*) malloc(3 * sizeof(int));
+    if (a[i] == NULL) {
+      cerr << "Error: out of memory" << endl;
+      exit(1);
+    }
+  } 
+
+  // second pass: read data and fill-in a
+  while(!input->eof()) {
+    if (i == *size_a) // avoid segfault in last pass
+      break;
+    *input >> a[i][0] >> a[i][1] >> a[i][2];
+    i++;
+  }
+  input->close();
+
+  return a;
+}
+
+void save_output_data(const char *ofilename, int **a, int size_a, float *out)
+{
+  ofstream outfile(ofilename, ios::out);
+  for(int i=0; i < size_a; i++) {
+    outfile << a[i][0] << " " << a[i][1] << " " << a[i][2] << " " << out[i] << endl;
+  }
+  outfile.close();
+}
+
 int main(int argc, char** argv) 
 {
   //argv[1] = "bunny.binvox";
@@ -324,30 +385,39 @@ int main(int argc, char** argv)
   unsigned int mem_size = width * height * depth * sizeof(float);
   float *voxel_data = (float*) malloc(mem_size);
 
-  // allocate host memory for voxelized screen pixels // CC
+  // read voxelized screen pixels from input data from file
+  // the size of a is returned in size_a
+  // memory is allocated by read_input_data 
+  int size_a = 0;
+  int **a = read_input_data("vox_coords.dat", &size_a);
+  cout << "a has " << size_a << " rows" << endl;
+
+#ifdef TESTING /* TEST_ONLY */
+  // generate input for voxelized screen pixels // CC
   int size_a = 128*512;
   int **a;
+
+  // allocate memory for a
   a = (int**) malloc(size_a * sizeof(int *));
   if(a == NULL) {
-    cerr << "out of memory" << endl;
+    cerr << "Error: out of memory" << endl;
     exit(1);
   }
   for(int i = 0; i < size_a; i++) {
     a[i] = (int*) malloc(3 * sizeof(int));
-    if(a[i] == NULL) {
-      cerr << "out of memory" << endl;
+    if (a[i] == NULL) {
+      cerr << "Error: out of memory" << endl;
       exit(1);
     }
   } 
 
-/* TEST_ONLY */
-  // generate input for voxelized screen pixels // CC
+  // fill in a
   for(int i = 0; i < size_a; i++) {
-	a[i][0] = 1;
-    	a[i][1] = 1;
-	a[i][2] = 1;
+    a[i][0] = i;
+    a[i][1] = i;
+    a[i][2] = i;
   }
-/* */
+#endif
 
   // generate input data for layered texture
   for (unsigned int layer = 0; layer < depth; layer++) {
@@ -375,14 +445,19 @@ int main(int argc, char** argv)
 
   // allocate mem for the result on host side // CC
   float *voxel_odata = (float*) malloc(size_a*sizeof(float));
-
+  
   run_kernel(width, height, depth, size_a, a, voxel_data, voxel_odata);
 
-  /* TESTING ONLY */
+#if 0
+  /* TEST for kernel test0 and test1 only */
   for (int i=0; i<size_a; i++) {
-     if (fabs(voxel_odata[i] - 3*512.0f > 0.1) )
-		cerr << "Test failed at " << i << endl;
+    if (fabs(voxel_odata[i] - (a[i][0] + a[i][1] + a[i][2])) > 0.1)
+      cerr << "Test failed at " << i << endl;
   }
+#endif
+
+  // save the output
+  save_output_data("result.dat", a, size_a, voxel_odata);
 
   // cleanup memory
   free(voxel_data);

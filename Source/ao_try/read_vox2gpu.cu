@@ -21,7 +21,7 @@
 
 #include "cuda_helpers.h"
 
-#define TILE_SIZE 512
+#define TILE_SIZE 64
 
 texture<float, cudaTextureType2DLayered> tex; // "dim" filled in the texture reference template is now deprecated
 
@@ -31,31 +31,72 @@ texture<float, cudaTextureType2DLayered> tex; // "dim" filled in the texture ref
 // Per layer: fetch layer's texture data and transform it to write to 3D output array
 // CC: work in progress
 
-__global__ void ao_kernel(int *devPtr, int pitch, float *c_data, int size_a) 
+__global__ void test0_kernel(int *devPtr, int pitch, float *c_data, int size_a) 
 {
-    int ty = threadIdx.y;
-    int by = blockIdx.y;
+  int ty = threadIdx.x;
+  int by = blockIdx.x;
+
+  float x, y, z;
+
+  unsigned aindex = ty + by * TILE_SIZE;
+
+  int* row = (int*)((char*)devPtr + aindex * pitch);
+  x = row[0];
+  y = row[1];
+  z = row[2];
+  
+  c_data[aindex] = x + y + z; 
+}
+
+__global__ void test1_kernel(int *ad1, int* ad2, int *ad3, float *c_data, int size_a) 
+{
+  int ty = threadIdx.x;
+  int by = blockIdx.x;
+  unsigned aindex = ty + by * TILE_SIZE;
+
+  c_data[aindex] = ad1[aindex] + ad2[aindex] + ad3[aindex];
+}
+
+__global__ void test2_kernel(int *ad1, int* ad2, int *ad3, float *c_data, int size_a) 
+{
+  int ty = threadIdx.x;
+  int by = blockIdx.x;
+  float u, v;
+  int layer;
+  unsigned aindex = ty + by * TILE_SIZE;
+
+  u = (ad1[aindex] + 0.5f)/(float) 256;
+  v = (ad2[aindex] + 0.5f)/(float) 256;
+  layer = (int) floor(ad3[aindex] + 0.5);
+   
+  c_data[aindex] = tex2DLayered(tex, (float)u, (float)v, layer);
+}
+
+__global__ void ao_kernel(int *ad1, int* ad2, int*ad3, float *c_data, int size_a) 
+{
+    int tx = threadIdx.x;
+    int bx = blockIdx.x;
 
     float x, y, z;
     float u, v;
     int layer;
     float dx, dy, dz;
+    c_data[tx + bx * TILE_SIZE] = 0;
 
     for (int i = 0; i <= size_a/TILE_SIZE ; i += TILE_SIZE) {
       __shared__ float bs[TILE_SIZE];
-      unsigned aindex = ty + by * TILE_SIZE;
+      unsigned aindex = tx + bx * TILE_SIZE;
 
-      int* row = (int*)((char*)devPtr + aindex * pitch);
-      x = row[0];
-      y = row[1];
-      z = row[2];
+      x = ad1[aindex];
+      y = ad2[aindex];
+      z = ad3[aindex];
 
       u = (x + 0.5f)/(float) 256;
       v = (y + 0.5f)/(float) 256;
       layer = (int) floor(z+0.5);
    
       if( tex2DLayered(tex, (float)u, (float)v, layer) != 0)
-     	 bs[ty] = 3; 
+     	 bs[tx] = 3; 
    
       /* the output is indexed in the same manner as A therefore there is no need to duplicate x,y,z */
       //c_data[aindex] = temp; /* FOR TESTING ONLY */
@@ -65,14 +106,14 @@ __global__ void ao_kernel(int *devPtr, int pitch, float *c_data, int size_a)
       // reduction of all values in bs per block 
       int i = TILE_SIZE/2;
       while (i != 0) { 
-	if (ty < i) 
-	   bs[ty] += bs[ty+1];
+	if (tx < i) 
+	   bs[tx] += bs[tx+1];
 	__syncthreads();
 	i /= 2;
       }
    
       // save reduced result in resultant array 
-      if (ty == 0) c_data[aindex] = bs[0];
+      if (tx == 0) c_data[aindex] = bs[0];
     } 
 }
 
@@ -86,9 +127,36 @@ void run_kernel(int width, int height, int depth, unsigned int size_a, int *a[],
   int* devPtr;
   size_t pitch;
   checkCudaErrors(cudaMallocPitch((void**)&devPtr, &pitch, 3 * sizeof(int), size_a));
-
   // copy A to allocated device memory locations
-  checkCudaErrors(cudaMemcpy2D(devPtr, pitch, *a, 3*sizeof(int), 3*sizeof(int), size_a, cudaMemcpyHostToDevice));
+  checkCudaErrors(cudaMemcpy2D(devPtr, pitch, (void *)a, 3*sizeof(int), 3*sizeof(int), size_a, cudaMemcpyHostToDevice));
+
+/*TEMPORARY HACK because the above does not work as expected
+  We split "a" in 3 1d arrays d1,d2,d3 and we copyone-by-one in device memory
+ */
+  int *d1 = NULL;
+  int *ad1 = NULL;
+  d1 = (int*) malloc(size_a * sizeof(int));
+  for (int i=0; i<size_a; i++)
+    d1[i]=a[i][0];
+  checkCudaErrors(cudaMalloc((void**) &ad1, size_a * sizeof(int)));
+  checkCudaErrors(cudaMemcpy(ad1, d1, size_a * sizeof(int), cudaMemcpyHostToDevice));
+
+  int *d2 = NULL;
+  int *ad2 = NULL;
+  d2 = (int*) malloc(size_a * sizeof(int));
+  for (int i=0; i<size_a; i++)
+    d2[i]=a[i][1];
+  checkCudaErrors(cudaMalloc((void**) &ad2, size_a * sizeof(int)));
+  checkCudaErrors(cudaMemcpy(ad2, d2, size_a * sizeof(int), cudaMemcpyHostToDevice));
+
+  int *d3 = NULL;
+  int *ad3 = NULL;
+  d3 = (int*) malloc(size_a * sizeof(int));
+  for (int i=0; i<size_a; i++)
+    d3[i]=a[i][2];
+  checkCudaErrors(cudaMalloc((void**) &ad3, size_a * sizeof(int)));
+  checkCudaErrors(cudaMemcpy(ad3, d3, size_a * sizeof(int), cudaMemcpyHostToDevice));
+/* END of HACK */
 
   // allocate device memory for device result
   float *c = NULL;
@@ -119,8 +187,8 @@ void run_kernel(int width, int height, int depth, unsigned int size_a, int *a[],
   StopWatchInterface * timer;
   
   // setup execution parameters
-  dim3 dimBlock(TILE_SIZE,1);
-  dim3 dimGrid(size_a/TILE_SIZE,1);
+  dim3 dimBlock(TILE_SIZE);
+  dim3 dimGrid(size_a/TILE_SIZE+1);
 
   checkCudaErrors(cudaDeviceSynchronize());
 
@@ -128,8 +196,11 @@ void run_kernel(int width, int height, int depth, unsigned int size_a, int *a[],
   sdkStartTimer(&timer);
 
   // execute the kernel
-  ao_kernel <<< dimGrid, dimBlock >>> (devPtr, pitch, c, size_a); 
-
+  ao_kernel <<< dimGrid, dimBlock >>> (ad1, ad2, ad3, c, size_a); 
+//  test0_kernel <<< dimGrid, dimBlock >>> (devPtr, pitch, c, size_a); 
+//  test1_kernel <<< dimGrid, dimBlock >>> (ad1, ad2, ad3, c, size_a); 
+//  test2_kernel <<< dimGrid, dimBlock >>> (ad1, ad2, ad3, c, size_a); 
+ 
   // check if kernel execution generated an error
   getLastCudaError("Kernel execution failed");
 
@@ -142,6 +213,9 @@ void run_kernel(int width, int height, int depth, unsigned int size_a, int *a[],
   // copy result from device to host
   checkCudaErrors(cudaMemcpy(voxel_odata, c, size_a*sizeof(float), cudaMemcpyDeviceToHost));
 
+  checkCudaErrors(cudaFree(ad1));
+  checkCudaErrors(cudaFree(ad2));
+  checkCudaErrors(cudaFree(ad3));
   checkCudaErrors(cudaFree(c));
   checkCudaErrors(cudaFree(devPtr)); 
   checkCudaErrors(cudaFreeArray(cu_3darray));
