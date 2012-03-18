@@ -76,19 +76,67 @@ __global__ void test3_kernel(int *ad1, int *ad2, int *ad3, float *c_data, int si
 {
   int tx = threadIdx.x;
   int bx = blockIdx.x;
-  float u, v, v_top;
+  float u, v;
+  float v_top, v_bottom, u_right, u_left;
   int layer;
+  float temp;
   unsigned aindex = tx + bx * TILE_SIZE;
 
   u = (ad1[aindex] + 0.5f)/(float) 256;
   v = (ad2[aindex] + 0.5f)/(float) 256;
   layer = (int) floor(ad3[aindex] + 0.5);
 
-  v_top = (ad2[aindex] - 1.0f + 0.5f)/(float) 256;;
+  v_top = (ad2[aindex] - 1.0f + 0.5f)/(float) 256;
+  v_bottom = (ad2[aindex] + 1.0f + 0.5f)/(float) 256;
+  u_right = (ad1[aindex] - 1.0f + 0.5f)/(float) 256;
+  u_left = (ad1[aindex] + 1.0f + 0.5f)/(float) 256;
 
-  if (v_top<=1 && v_top>=0) 
-    c_data[aindex] = tex2DLayered(tex, (float)u, (float)v, layer) + tex2DLayered(tex, (float)u, (float)v_top, layer);
+  if (v_top>=0 && v_bottom<=1 && u_right>=0 && u_left<=1) { 
+  //  c_data[aindex] = tex2DLayered(tex, (float)u, (float)v, layer) + tex2DLayered(tex, (float)u, (float)v_top, layer) + tex2DLayered(tex, (float)u, (float)v_bottom, layer) + tex2DLayered(tex, (float)u_left, (float)v, layer) + tex2DLayered(tex, (float)u_right, (float)v, layer);
+  
+  c_data[aindex] = tex2DLayered(tex, (float)u, (float)v_top, layer) * powf(ad2[aindex] - 1.0f - ad2[aindex],2) + tex2DLayered(tex, (float)u, (float)v_bottom, layer) * powf(ad2[aindex] + 1.0f - ad2[aindex],2) + tex2DLayered(tex, (float)u_left, (float)v, layer) * powf(ad1[aindex] + 1.0f - ad1[aindex],2) + tex2DLayered(tex, (float)u_right, (float)v, layer) * powf(ad1[aindex] - 1.0f - ad1[aindex],2);
+  }
   else c_data[aindex] = 0;
+}
+
+__global__ void test4_kernel(int *ad1, int *ad2, int *ad3, float *c_data, int size_a)
+{
+  int tx = threadIdx.x;
+  int bx = blockIdx.x;
+  float u, v;
+  int layer;
+  float u_next, v_next;
+  int layer_next;
+  float temp = 0;
+  float dx = 0.0f; float dy = 0.0f; float dz = 0.0f;
+  unsigned aindex = tx + bx * TILE_SIZE;
+  int dim = 4;
+  int exist; 
+
+  u = (ad1[aindex] + 0.5f)/(float) 255;
+  v = (ad2[aindex] + 0.5f)/(float) 255;
+  layer = ad3[aindex];
+
+  for (int m=-(dim/2); m<=(dim/2)-1; m++) {                    // depth
+      for (int n=-(dim/2)+1; n<=(dim/2); n++) {                // height
+        for (int p=-(dim/2); p<=(dim/2)-1; p++) {              // width
+	   u_next = (ad1[aindex] + 0.5f + p)/(float) 255;
+	   v_next = (ad2[aindex] + 0.5f + n)/(float) 255;
+	   layer_next = ad3[aindex] + m;
+	   exist = tex2DLayered(tex, (float)u_next, (float)v_next, layer_next);
+           if ( exist!=0 && v_next>=0 && v_next<=1 && u_next>=0 && u_next<=1 && layer_next>=0 && layer_next<256) { 
+           	dx = powf(p,2);
+           	dy = powf(n,2);
+           	dz = powf(m,2);
+           	temp += dx + dy + dz;
+	   } 
+	   else temp += 0;
+        }
+     }
+  }
+  
+  c_data[aindex] = temp;
+  __syncthreads();
 }
 
 __global__ void ao_kernel(int *ad1, int* ad2, int*ad3, float *c_data, int size_a) 
@@ -222,7 +270,8 @@ void run_kernel(int width, int height, int depth, unsigned int size_a, int *a[],
 //  test0_kernel <<< dimGrid, dimBlock >>> (devPtr, pitch, c, size_a); 
 //  test1_kernel <<< dimGrid, dimBlock >>> (ad1, ad2, ad3, c, size_a); 
 //  test2_kernel <<< dimGrid, dimBlock >>> (ad1, ad2, ad3, c, size_a); 
-    test3_kernel <<< dimGrid, dimBlock >>> (ad1, ad2, ad3, c, size_a);
+//  test3_kernel <<< dimGrid, dimBlock >>> (ad1, ad2, ad3, c, size_a);
+  test4_kernel <<< dimGrid, dimBlock >>> (ad1, ad2, ad3, c, size_a);
  
   // check if kernel execution generated an error
   getLastCudaError("Kernel execution failed");

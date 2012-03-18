@@ -441,21 +441,92 @@ int main(int argc, char** argv)
 #endif
 
 #if 1
-  /* TEST for kernel test3 only */
-  for (int i=0; i<size_a; i++) {
+  /* TEST for kernel test4 only */
+  /*float dx = 0.0f, dy = 0.0f, dz = 0.0f;
+  float temp = 0.0f;  
+  int dim = 4;
+  int pos = 0.0f; int next_pos = 0.0f;
+  
+  for (unsigned int t=0; t<size_a; t++) {
+  pos = a[t][2] * width * height + a[t][1] * width + a[t][0];
+    for (int m=-(dim/2); m<=(dim/2)-1; m++) {                    // depth
+      for (int n=-(dim/2)+1; n<=(dim/2); n++) {                  // height
+        for (int p=-(dim/2); p<=(dim/2)-1; p++) {                // width
+              next_pos = (a[t][2] + m) * width * height + (a[t][1] + n) * width + (a[t][0] + p);
+              if (voxel_data[pos] != 0 && voxel_data[next_pos] !=0 && (a[t][2] + m)>=0 && (a[t][1] + n)>=0 && (a[t][0] + p)>=0 && (a[t][2] + m)<256 && (a[t][1] + n)<256 && (a[t][0] + p)<256) {
+                   dx = powf(p,2);
+                   dy = powf(n,2);
+                   dz = powf(m,2);
+                   temp += dx + dy + dz;
+               }
+               else temp += 0;
+         }
+       }
+     }
+ 
+   if (fabs(voxel_odata[t] - temp) > 0.1)
+        cerr << "Distance test failed at " << t << "with position: " << pos << endl;
+   temp = 0.0f;  
+ }
+ */
+ 
+
+  /* TEST for kernel test4 with specific values only */
+  float dx = 0.0f, dy = 0.0f, dz = 0.0f;
+  float temp = 0.0f;  
+  int dim = 4;
+  int const i = 3; //489
+
+  int pos = a[i][2] * width * height + a[i][1] * width + a[i][0];
+  for (int m=-(dim/2); m<=(dim/2)-1; m++) {                    // depth
+    for (int n=-(dim/2)+1; n<=(dim/2); n++) {                  // height
+      for (int p=-(dim/2); p<=(dim/2)-1; p++) {                // width
+                int next_pos = (a[i][2] + m) * width * height + (a[i][1] + n) * width + (a[i][0] + p);
+                if (voxel_data[pos] != 0 && voxel_data[next_pos] !=0 && (a[i][2] + m)>=0 && (a[i][1] + n)>=0 && (a[i][0] + p)>=0 && (a[i][2] + m)<256 && (a[i][1] + n)<256 && (a[i][0] + p)<256) {
+                  dx = powf(p,2);
+                  dy = powf(n,2);
+                  dz = powf(m,2);
+                  temp += dx + dy + dz;
+		  cout << "pos (x,y,z): " << a[i][0] + p << ", " << a[i][1] + n << ", " << a[i][2] + m << endl;
+		  cout << "temporary temp value : " << temp << endl;
+                }
+                else temp += 0;
+      }
+    }
+  }
+   
+  cout << "diff: " << fabs(voxel_odata[i] - temp) << endl;
+  cout << "gpu: " << voxel_odata[i] << " cpu: " << temp << endl;
+  cout << "x: " << a[i][0] << " y: " << a[i][1] << " z: " << a[i][2] << endl;
+ 
+
+  /* TEST for kernel test3 with 4 neighbors only */
+  /* for (int i=0; i<size_a; i++) {
+    // correct neighbors?
     int pos = a[i][2] * width * height + a[i][1] * width + a[i][0];
     int pos_top = a[i][2] * width * height + (a[i][1]-1) * width + a[i][0];
-    if (fabs(voxel_odata[i] - voxel_data[pos] - voxel_data[pos_top]) > 0.1) 
- 	cerr << "Test failed at "<< i << "with position in voxels[]: " << pos << endl;
-  }
+    int pos_bottom = a[i][2] * width * height + (a[i][1]+1) * width + a[i][0];
+    int pos_left = a[i][2] * width * height + a[i][1] * width + a[i][0]+1;
+    int pos_right = a[i][2] * width * height + a[i][1] * width + a[i][0]-1;
+    // if (fabs(voxel_odata[i] - voxel_data[pos] - voxel_data[pos_top] - voxel_data[pos_bottom] - voxel_data[pos_left] - voxel_data[pos_right]) > 0.1) 
+    //	cerr << "Neighborhood test failed at "<< i << "with position: " << pos << endl;
+    // correct summed up weighted distance?
+    float temp = voxel_data[pos_top] * powf(a[i][1]-1-a[i][1],2) + voxel_data[pos_bottom] * powf(a[i][1]+1-a[i][1],2) + voxel_data[pos_left] * powf(a[i][0]+1-a[i][0],2) + voxel_data[pos_right] * powf(a[i][0]-1-a[i][0],2);
+    if (fabs(voxel_odata[i] - temp) > 0.1)
+	cerr << "Distance test failed at " << i << "with position: " << pos << endl;
+  } */
 
   /* TEST for kernel test3 specific values only */
-  /*  int pos = a[73][2] * width * height + a[73][1] * width + a[73][0];
-    int pos_top = a[73][2] * width * height + (a[73][1]-1) * width + a[73][0];
-    cout << fabs(voxel_odata[73] - voxel_data[pos] - voxel_data[pos_top]) << endl;
-    cout << "gpu: " << voxel_odata[73] << "cpu: " << (float)(voxel_data[pos]+voxel_data[pos_top]) << endl;
-    cout << "x: " << a[73][0] << "y: " << a[73][1] << "z: " << a[73][2] << endl;
-    cout << "next x: " << a[73][0] << "y: " << (a[73][1]-1) << "z: " << a[73][2] << endl;
+  /*  int const t = 6; 
+    int pos = a[t][2] * width * height + a[t][1] * width + a[t][0];
+    int pos_top = a[t][2] * width * height + (a[t][1]-1) * width + a[t][0];
+    int pos_bottom = a[t][2] * width * height + (a[t][1]+1) * width + a[t][0];
+    int pos_left = a[t][2] * width * height + a[t][1] * width + a[t][0] + 1;
+    int pos_right = a[t][2] * width * height + a[t][1] * width + a[t][0] - 1;
+    cout << fabs(voxel_odata[t] - voxel_data[pos] - voxel_data[pos_top] - voxel_data[pos_bottom] - voxel_data[pos_left]- voxel_data[pos_right]) << endl;
+    cout << "gpu: " << voxel_odata[t] << "cpu: " << (float)(voxel_data[pos]+voxel_data[pos_top]+voxel_data[pos_bottom]+voxel_data[pos_right]+voxel_data[pos_left]) << endl;
+    cout << "x: " << a[t][0] << "y: " << a[t][1] << "z: " << a[t][2] << endl;
+    cout << "next x: " << a[t][0] << "y: " << (a[t][1]-1) << "z: " << a[t][2] << endl;
     cout << "pos: " << pos << ", next pos: " << pos_top << endl;
   */
 #endif
