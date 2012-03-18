@@ -24,11 +24,12 @@ Thumbs.db
 
 #Teapot test scenes
 teapotScenes
-
+test
 <<<<<<< HEAD
+
 #Outputs
 *.binvox
-=======
+
 # Binvox
 .binvox
->>>>>>> upstream/master
+
