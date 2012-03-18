@@ -247,8 +247,9 @@ int read_binvox(string filespec)
        for(int j=0; j < width; j++) {
          int index = i * width * height + k * width + j;
          if (voxels[index]) {
-        vox_coords << i << " " << j << " " << k << endl;
-         }
+        //vox_coords << i << " " << j << " " << k << endl;
+          vox_coords << j << " " << k << " " << i << endl; 
+	 }
        }
      }
   }
@@ -426,23 +427,6 @@ int main(int argc, char** argv)
     }
   }
 
-  /*// generate input for neighborhood matrix // CC
-  int b_i = -1, b_j = -1, b_k = -1;
-  int incr = -4;
-  for (unsigned int idz = 0; idz < 8 * d; idz++) {
-    if (idz % 8 == 0) { b_i++; incr = -4; }
-    for (unsigned int idy = 0; idy < 8 * h; idy++) {
-       if (idy % 8 == 0) { b_j++; incr = -4; }
-       for (unsigned int idx = 0; idx < 8 * w; idx++) {
-        if (idx % 8 == 0) { b_k++; incr = -4; }    
-        b[idx][idy][idz][0] = a[b_i][b_j][b_k][0] + 0.5f - incr;
-        b[idx][idy][idz][1] = a[b_i][b_j][b_k][1] + 0.5f - incr;
-        b[idx][idy][idz][2] = a[b_i][b_j][b_k][2] + 0.5f - incr; 
-        incr++;
-       }
-    }
-  }*/
-
   // allocate mem for the result on host side // CC
   float *voxel_odata = (float*) malloc(size_a*sizeof(float));
   
@@ -454,6 +438,26 @@ int main(int argc, char** argv)
     if (fabs(voxel_odata[i] - (a[i][0] + a[i][1] + a[i][2])) > 0.1)
       cerr << "Test failed at " << i << endl;
   }
+#endif
+
+#if 1
+  /* TEST for kernel test3 only */
+  for (int i=0; i<size_a; i++) {
+    int pos = a[i][2] * width * height + a[i][1] * width + a[i][0];
+    int pos_top = a[i][2] * width * height + (a[i][1]-1) * width + a[i][0];
+    if (fabs(voxel_odata[i] - voxel_data[pos] - voxel_data[pos_top]) > 0.1) 
+ 	cerr << "Test failed at "<< i << "with position in voxels[]: " << pos << endl;
+  }
+
+  /* TEST for kernel test3 specific values only */
+  /*  int pos = a[73][2] * width * height + a[73][1] * width + a[73][0];
+    int pos_top = a[73][2] * width * height + (a[73][1]-1) * width + a[73][0];
+    cout << fabs(voxel_odata[73] - voxel_data[pos] - voxel_data[pos_top]) << endl;
+    cout << "gpu: " << voxel_odata[73] << "cpu: " << (float)(voxel_data[pos]+voxel_data[pos_top]) << endl;
+    cout << "x: " << a[73][0] << "y: " << a[73][1] << "z: " << a[73][2] << endl;
+    cout << "next x: " << a[73][0] << "y: " << (a[73][1]-1) << "z: " << a[73][2] << endl;
+    cout << "pos: " << pos << ", next pos: " << pos_top << endl;
+  */
 #endif
 
   // save the output

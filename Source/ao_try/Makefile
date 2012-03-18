@@ -36,7 +36,7 @@
 CUDA_SDK_PATH ?= /home/calinacopos/NVIDIA_GPU_Computing_SDK
 CUDA_INSTALL_PATH ?= /usr/local/cuda
 
-CUBIN_ARCH_FLAG :=
+CUBIN_ARCH_FLAG := 1
 CXXFLAGS := -I. -I$(CUDA_INSTALL_PATH)/include -I$(CUDA_SDK_PATH)/CUDALibraries/common/inc -I$(CUDA_SDK_PATH)/shared/inc/
 CUDACCFLAGS := -I. -I$(CUDA_INSTALL_PATH)/include -I$(CUDA_SDK_PATH)/CUDALibraries/common/inc -I$(CUDA_SDK_PATH)/shared/inc/
 

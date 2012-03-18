@@ -21,7 +21,7 @@
 
 #include "cuda_helpers.h"
 
-#define TILE_SIZE 64
+#define TILE_SIZE 512//64
 
 texture<float, cudaTextureType2DLayered> tex; // "dim" filled in the texture reference template is now deprecated
 
@@ -72,6 +72,25 @@ __global__ void test2_kernel(int *ad1, int* ad2, int *ad3, float *c_data, int si
   c_data[aindex] = tex2DLayered(tex, (float)u, (float)v, layer);
 }
 
+__global__ void test3_kernel(int *ad1, int *ad2, int *ad3, float *c_data, int size_a)
+{
+  int tx = threadIdx.x;
+  int bx = blockIdx.x;
+  float u, v, v_top;
+  int layer;
+  unsigned aindex = tx + bx * TILE_SIZE;
+
+  u = (ad1[aindex] + 0.5f)/(float) 256;
+  v = (ad2[aindex] + 0.5f)/(float) 256;
+  layer = (int) floor(ad3[aindex] + 0.5);
+
+  v_top = (ad2[aindex] - 1.0f + 0.5f)/(float) 256;;
+
+  if (v_top<=1 && v_top>=0) 
+    c_data[aindex] = tex2DLayered(tex, (float)u, (float)v, layer) + tex2DLayered(tex, (float)u, (float)v_top, layer);
+  else c_data[aindex] = 0;
+}
+
 __global__ void ao_kernel(int *ad1, int* ad2, int*ad3, float *c_data, int size_a) 
 {
     int tx = threadIdx.x;
@@ -81,11 +100,15 @@ __global__ void ao_kernel(int *ad1, int* ad2, int*ad3, float *c_data, int size_a
     float u, v;
     int layer;
     float dx, dy, dz;
-    c_data[tx + bx * TILE_SIZE] = 0;
+    __shared__ float bs[TILE_SIZE];
+    unsigned int aindex = tx + bx * TILE_SIZE;  
 
-    for (int i = 0; i <= size_a/TILE_SIZE ; i += TILE_SIZE) {
-      __shared__ float bs[TILE_SIZE];
-      unsigned aindex = tx + bx * TILE_SIZE;
+    c_data[tx + bx * TILE_SIZE] = 0;
+  
+
+    //for (int i = 0; i <= size_a/TILE_SIZE ; i += TILE_SIZE) {
+    //  __shared__ float bs[TILE_SIZE];
+    //  unsigned aindex = tx + bx * TILE_SIZE;
 
       x = ad1[aindex];
       y = ad2[aindex];
@@ -96,8 +119,8 @@ __global__ void ao_kernel(int *ad1, int* ad2, int*ad3, float *c_data, int size_a
       layer = (int) floor(z+0.5);
    
       if( tex2DLayered(tex, (float)u, (float)v, layer) != 0)
-     	 bs[tx] = 3; 
-   
+     	 bs[tx] = 3;
+ 
       /* the output is indexed in the same manner as A therefore there is no need to duplicate x,y,z */
       //c_data[aindex] = temp; /* FOR TESTING ONLY */
     
@@ -113,8 +136,7 @@ __global__ void ao_kernel(int *ad1, int* ad2, int*ad3, float *c_data, int size_a
       }
    
       // save reduced result in resultant array 
-      if (tx == 0) c_data[aindex] = bs[0];
-    } 
+      if (tx == 0) c_data[bx] = bs[0]; 
 }
 
   // read from texture, do expected layered transformation and write to global memory
@@ -188,7 +210,7 @@ void run_kernel(int width, int height, int depth, unsigned int size_a, int *a[],
   
   // setup execution parameters
   dim3 dimBlock(TILE_SIZE);
-  dim3 dimGrid(size_a/TILE_SIZE+1);
+  dim3 dimGrid((size_a)/TILE_SIZE+1);
 
   checkCudaErrors(cudaDeviceSynchronize());
 
@@ -196,10 +218,11 @@ void run_kernel(int width, int height, int depth, unsigned int size_a, int *a[],
   sdkStartTimer(&timer);
 
   // execute the kernel
-  ao_kernel <<< dimGrid, dimBlock >>> (ad1, ad2, ad3, c, size_a); 
+//  ao_kernel <<< dimGrid, dimBlock >>> (ad1, ad2, ad3, c, size_a); 
 //  test0_kernel <<< dimGrid, dimBlock >>> (devPtr, pitch, c, size_a); 
 //  test1_kernel <<< dimGrid, dimBlock >>> (ad1, ad2, ad3, c, size_a); 
 //  test2_kernel <<< dimGrid, dimBlock >>> (ad1, ad2, ad3, c, size_a); 
+    test3_kernel <<< dimGrid, dimBlock >>> (ad1, ad2, ad3, c, size_a);
  
   // check if kernel execution generated an error
   getLastCudaError("Kernel execution failed");
