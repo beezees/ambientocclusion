@@ -45,112 +45,6 @@ void init(void)
 	glColorMaterial(GL_FRONT_AND_BACK, GL_AMBIENT);
 }
 
-
-
-//This creates a PNG of the input values to visually test the accuracy of the data.
-bool writeMonochromeBuffer(char *filename, double *image, int width, int height, double minPlane, double maxPlane)
-{
- double m, M;
- m = 1e20;
- M = -1e20;
-
- for (int i = 0; i < width * height; i++)
- if (image[i] >= minPlane && image[i] <= maxPlane)
- {
-   m = std::min(m, image[i]);
-   M = std::max(M, image[i]);
- }
-
- double scale = (M - m) / 255.0;
-
- unsigned char *buffer = new unsigned char[width * height * 3];
-
- unsigned char val;
- for (int i = 0; i < width * height; i++)
- if (image[i] < minPlane)
- {
-   buffer[3 * i + 0] = 0;
-   buffer[3 * i + 1] = 64;
-   buffer[3 * i + 2] = 0;
- }
- else if (image[i] > maxPlane)
- {
-   buffer[3 * i + 0] = 64;
-   buffer[3 * i + 1] = 0;
-   buffer[3 * i + 2] = 0;
- }
-else
-{
-   val = (image[i] - m) / scale;
-   buffer[3 * i + 0] = 0;
-   buffer[3 * i + 1] = 0;
-   buffer[3 * i + 2] = val;
- }
-
- unsigned char **rows  = new unsigned char*[height];
- for (int i = 0; i < height; i++)
-   rows[i] = &buffer[width * i * 3];
-
- /* create file */
- FILE *fp = fopen(filename, "wb");
- if (!fp)
- {
-   printf("File %s could not be opened for writing. Aborting.\n", filename);
-   delete [] rows;
-   delete [] buffer;
-   return false;
- }
-
- /* initialize stuff */
- png_structp png_ptr = png_create_write_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
-
- if (!png_ptr)
- {
-   printf("png_create_write_struct failed\n.");
-   delete [] rows;
-   delete [] buffer;
-   return false;
- }
-
- png_infop info_ptr = png_create_info_struct(png_ptr);
- if (!info_ptr)
- {
-   printf("png_create_info_struct failed\n");
-   delete [] rows;
-   delete [] buffer; // Stay away from mah brackets!
-   return false;
- }
-
- if (setjmp(png_jmpbuf(png_ptr)))
- {
-   printf("LibPNG longjump abort! RUN FOR YOUR LIVES!\n");
-   delete [] rows;
-   delete [] buffer;
-   return false;
- }
-
- png_init_io(png_ptr, fp);
-
- png_set_IHDR(png_ptr, info_ptr, width, height, 8, PNG_COLOR_TYPE_RGB,
-   PNG_INTERLACE_NONE, PNG_COMPRESSION_TYPE_BASE, PNG_FILTER_TYPE_BASE);
-
- png_write_info(png_ptr, info_ptr);
-
- png_write_image(png_ptr, rows);
-
- png_write_end(png_ptr, NULL);
-
- delete [] rows;
- delete [] buffer;
- fclose(fp);
-
- cout << "Max:" << M << "min:" << m << endl;
-
- return true;
-}
-
-
-
 void convertToObj(int x, int y, double obj[])
 {
         int viewport[4];
@@ -175,11 +69,11 @@ void convertToObj(int x, int y, double obj[])
 
 void convertToVoxel(double objx, double objy, double objz, int vox[])
 {
-	double voxSize;
+//	double voxSize;
 	double voxSizex, voxSizey, voxSizez;
 
 	//Find dimensions of a single voxel:
-	voxSize = 2.0/grid;
+//	voxSize = 2.0/grid;
 	voxSizex = (objxMax - objxMin)/grid;
 	voxSizey = (objyMax - objyMin)/grid;
 	voxSizez = (objzMax - objzMin)/grid;
@@ -213,19 +107,44 @@ void display(void)
 	glLoadIdentity();
 	gluLookAt(0, 0, 4, 0, 0, 0, 0, 1, 0);	//point to look from, at, upward direction
 
-	//Lighting Stuff:
-	float light0Direction[] = {10.0, 200.0, 100.0, 0.0};	//Distant light
-	float whiteColour[] = {1.0, 1.0, 1.0, 1.0};
-	float grayColour[] = {0.5, 0.5, 0.5, 0.5};
-	float blackColour[] = {0.0, 0.0, 0.0, 1.0};
-	glLightfv(GL_LIGHT0, GL_POSITION, light0Direction);
-	glLightfv(GL_LIGHT0, GL_AMBIENT, blackColour);
-	glLightfv(GL_LIGHT0, GL_SPECULAR, blackColour);
-	glLightfv(GL_LIGHT0, GL_DIFFUSE, grayColour);
-
 	glCallList(displayList);
 
 	glFlush();
+
+	int vox[3];
+	double obj[3];
+        ifstream results;
+        results.open("nonzeroc.dat", ios::in);
+        int coordIndex = 0;
+        int xin, yin, zin;
+        while (!results.eof()){
+                getline(results, str);
+                istringstream results_iss(str);
+                while(results_iss >> item){
+                        coordIndex++;
+                        if (coordIndex % 4 == 1) {
+                                vox[0] = item;
+//                              cout << item << ' ';
+                        }
+                        if (coordIndex % 4 == 2) {
+                                vox[1] = item;
+//                              cout << item << ' ';
+                        }
+                        if (coordIndex % 4 == 3){
+                                vox[2] = item;
+//                              cout << item << "\n";
+                        }
+			if (coordIndex % 4 == 0){
+				ao = item;
+				cout << item << "\n";
+			}
+			convertToObj(vox[], obj[]);
+			objx = obj[0];
+			objy = obj[1];
+			objz = obj[2];		
+                }
+        }
+        results.close();
 
 	//Convert from window location to closest voxel vertex location:
         int pixelX, pixelY;
@@ -259,7 +178,6 @@ void display(void)
 	filledVox.close();
 	cout << zcount;
 
-	writeMonochromeBuffer("zpic.png", depth, winWidth, winHeight, -1, 1);
 	cout << "done";
 	glutSwapBuffers();
 	getchar();	//breakpoint
@@ -329,8 +247,6 @@ int main(int argc, char** argv)
 	glmVertexNormals(model, angle);
 
 	//Find maximum and minimum coordinates:
-//	GLfloat xObjMax, yObjMax, zObjMax;
-//	GLfloat xObjMin, yObjMin, zObjMin;
 	objxMax = arrayMax(modelx, numvertices);
 	objyMax = arrayMax(modely, numvertices);
 	objzMax = arrayMax(modelz, numvertices);
