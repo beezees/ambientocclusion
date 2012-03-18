@@ -1,0 +1,11 @@
+reading binvox version 1
+  read 3355029 voxels
+
+Writing voxel data to ASCII file...
+done
+
+> Using CUDA device [0]: Tesla C2070
+CUDA device [Tesla C2070] has 14 Multi-Processors SM 2.0
+a has 3355029 rows
+Processing time: 40.269 msec
+416.63 Mtexlookups/sec
