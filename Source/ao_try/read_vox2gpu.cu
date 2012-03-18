@@ -113,15 +113,18 @@ __global__ void test4_kernel(int *ad1, int *ad2, int *ad3, float *c_data, int si
   int dim = 4;
   int exist; 
 
-  u = (ad1[aindex] + 0.5f)/(float) 255;
-  v = (ad2[aindex] + 0.5f)/(float) 255;
+  u = (ad1[aindex] )/(float) 255;
+  v = (ad2[aindex] )/(float) 255;
   layer = ad3[aindex];
 
+  float mine = tex2DLayered(tex, (float)u, (float)v, layer);
+
+  if (mine != 0) {
   for (int m=-(dim/2); m<=(dim/2)-1; m++) {                    // depth
       for (int n=-(dim/2)+1; n<=(dim/2); n++) {                // height
         for (int p=-(dim/2); p<=(dim/2)-1; p++) {              // width
-	   u_next = (ad1[aindex] + 0.5f + p)/(float) 255;
-	   v_next = (ad2[aindex] + 0.5f + n)/(float) 255;
+	   u_next = (ad1[aindex] + p)/(float) 255;
+	   v_next = (ad2[aindex] + n)/(float) 255;
 	   layer_next = ad3[aindex] + m;
 	   exist = tex2DLayered(tex, (float)u_next, (float)v_next, layer_next);
            if ( exist!=0 && v_next>=0 && v_next<=1 && u_next>=0 && u_next<=1 && layer_next>=0 && layer_next<256) { 
@@ -133,6 +136,7 @@ __global__ void test4_kernel(int *ad1, int *ad2, int *ad3, float *c_data, int si
 	   else temp += 0;
         }
      }
+  }
   }
   
   c_data[aindex] = temp;

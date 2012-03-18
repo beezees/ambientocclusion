@@ -390,7 +390,7 @@ int main(int argc, char** argv)
   // the size of a is returned in size_a
   // memory is allocated by read_input_data 
   int size_a = 0;
-  int **a = read_input_data("vox_coords.dat", &size_a);
+  int **a = read_input_data("filledVox.dat", &size_a);
   cout << "a has " << size_a << " rows" << endl;
 
 #ifdef TESTING /* TEST_ONLY */
@@ -442,11 +442,12 @@ int main(int argc, char** argv)
 
 #if 1
   /* TEST for kernel test4 only */
-  /*float dx = 0.0f, dy = 0.0f, dz = 0.0f;
+  float dx = 0.0f, dy = 0.0f, dz = 0.0f;
   float temp = 0.0f;  
   int dim = 4;
   int pos = 0.0f; int next_pos = 0.0f;
-  
+  float diff= 0.0f; int count = 0.0; 
+ 
   for (unsigned int t=0; t<size_a; t++) {
   pos = a[t][2] * width * height + a[t][1] * width + a[t][0];
     for (int m=-(dim/2); m<=(dim/2)-1; m++) {                    // depth
@@ -464,18 +465,21 @@ int main(int argc, char** argv)
        }
      }
  
-   if (fabs(voxel_odata[t] - temp) > 0.1)
-        cerr << "Distance test failed at " << t << "with position: " << pos << endl;
-   temp = 0.0f;  
+   if (fabs(voxel_odata[t] - temp) > 0.1) {
+        //cerr << "Distance test failed at " << t << "with position: " << pos << endl;
+   	count++; diff += fabs(voxel_odata[t] - temp);
+   }     
+   temp = 0.0f;
+
+   //cout << "Total difference: " << diff << " for # voxels: " << count << endl;  
  }
- */
  
 
   /* TEST for kernel test4 with specific values only */
-  float dx = 0.0f, dy = 0.0f, dz = 0.0f;
+  /*float dx = 0.0f, dy = 0.0f, dz = 0.0f;
   float temp = 0.0f;  
   int dim = 4;
-  int const i = 3; //489
+  int const i = 8; //3489
 
   int pos = a[i][2] * width * height + a[i][1] * width + a[i][0];
   for (int m=-(dim/2); m<=(dim/2)-1; m++) {                    // depth
@@ -498,7 +502,7 @@ int main(int argc, char** argv)
   cout << "diff: " << fabs(voxel_odata[i] - temp) << endl;
   cout << "gpu: " << voxel_odata[i] << " cpu: " << temp << endl;
   cout << "x: " << a[i][0] << " y: " << a[i][1] << " z: " << a[i][2] << endl;
- 
+  */
 
   /* TEST for kernel test3 with 4 neighbors only */
   /* for (int i=0; i<size_a; i++) {
