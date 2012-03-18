@@ -27,6 +27,8 @@ int grid = 256;
 
 float zcount;
 
+float objxMin, objxMax, objyMin, objyMax, objzMin, objzMax;
+
 void init(void)
 {
 	glClearColor(1.0f, 1.0f, 1.0f, 1.0f);	//White background
@@ -162,7 +164,6 @@ void convertToObj(int x, int y, double obj[])
         glGetIntegerv( GL_VIEWPORT, viewport );
 
         glReadPixels( x, viewport[3]-y, 1, 1, GL_DEPTH_COMPONENT, GL_FLOAT, &z);
-	cout << z << " ";
         gluUnProject( x, viewport[3]-y, z, modelview, projection, viewport, &objx, &objy, &objz);
 
         obj[0] = objx;
@@ -175,14 +176,27 @@ void convertToObj(int x, int y, double obj[])
 void convertToVoxel(double objx, double objy, double objz, int vox[])
 {
 	double voxSize;
+	double voxSizex, voxSizey, voxSizez;
 
 	//Find dimensions of a single voxel:
 	voxSize = 2.0/grid;
+	voxSizex = (objxMax - objxMin)/grid;
+	voxSizey = (objyMax - objyMin)/grid;
+	voxSizez = (objzMax - objzMin)/grid;
 
 	//Coordinates of containing voxel:
-	vox[0] = floor((objx + 1.0)/voxSize);
-	vox[1] = floor((objy + 1.0)/voxSize);
-	vox[2] = floor((objz + 1.0)/voxSize);
+/*	vox[0] = floor((objx + 1.0f)/voxSize);
+	if (vox[0] == 256) vox[0] = 255;
+	vox[1] = floor((objy + 1.0f)/voxSize);
+        if (vox[1] == 256) vox[1] = 255;
+	vox[2] = floor((objz + 1.0f)/voxSize);
+        if (vox[2] == 256) vox[2] = 255;
+*/	vox[0] = floor((objx - objxMin)/voxSizex);
+	if (vox[0] == 256) vox[0] = 255;
+	vox[1] = floor((objy - objyMin)/voxSizey);
+        if (vox[1] == 256) vox[1] = 255;
+	vox[2] = floor((objz - objzMin)/voxSizez);
+        if (vox[2] == 256) vox[2] = 255;
 
 	return;
 }
@@ -230,9 +244,10 @@ void display(void)
 		        objy = obj[1];
 		        objz = obj[2];
 			depth[pixelX+pixelY*winWidth] = objz;
-			cout << objz << endl;
-			if (objz > -1 && objz < 1){
+//			cout << objz << endl;
+			if (objz >= -1.0f && objz <= 1.0f){
 				//TODO: find closest vertex and return normal to write to file
+//				filledVox << objx << " " << objy << " " << objz << endl;
 		        	convertToVoxel(objx, objy, objz, vox);
 		        	voxX = vox[0];
 		        	voxY = vox[1];
@@ -314,23 +329,23 @@ int main(int argc, char** argv)
 	glmVertexNormals(model, angle);
 
 	//Find maximum and minimum coordinates:
-	GLfloat xObjMax, yObjMax, zObjMax;
-	GLfloat xObjMin, yObjMin, zObjMin;
-	xObjMax = arrayMax(modelx, numvertices);
-	yObjMax = arrayMax(modely, numvertices);
-	zObjMax = arrayMax(modelz, numvertices);
-	xObjMin = arrayMin(modelx, numvertices);
-	yObjMin = arrayMin(modely, numvertices);
-	zObjMin = arrayMin(modelz, numvertices);
+//	GLfloat xObjMax, yObjMax, zObjMax;
+//	GLfloat xObjMin, yObjMin, zObjMin;
+	objxMax = arrayMax(modelx, numvertices);
+	objyMax = arrayMax(modely, numvertices);
+	objzMax = arrayMax(modelz, numvertices);
+	objxMin = arrayMin(modelx, numvertices);
+	objyMin = arrayMin(modely, numvertices);
+	objzMin = arrayMin(modelz, numvertices);
 
 	//Output the ranges of coordinate values:
-	cout << "Min x:" << xObjMin << "\n";
+/*	cout << "Min x:" << xObjMin << "\n";
 	cout << "Min y:" << yObjMin << "\n";
 	cout << "Min z:" << zObjMin << "\n";
 	cout << "Max x:" << xObjMax << "\n";
 	cout << "Max y:" << yObjMax << "\n";
 	cout << "Max z:" << zObjMax << "\n";
-
+*/
 	//Load model into display list:
 	displayList = glGenLists(1);
 	glNewList(displayList, GL_COMPILE);
@@ -373,48 +388,6 @@ int main(int argc, char** argv)
 	cout << test << '\n';
 	test = voxels[6][179][145];
 	cout << test << '\n';
-*/
-/*	//Convert from window location to closest voxel vertex location:
-        int pixelX, pixelY;
-	double obj[3];
-        double objx, objy, objz;
-        int vox[3];
-        int voxX, voxY, voxZ;
-	float numVox = 0;
-	ofstream filledVox;
-        filledVox.open("filledVox.dat", ios::out);
-        for (pixelY = 0; pixelY < winHeight; pixelY++){	//the 2 and 3 are a ghetto fix to make the voxel y's on a scale from 0 to 255.
-		for (pixelX = 0; pixelX < winWidth; pixelX++){
-        		convertToObj(pixelX, pixelY, obj);
-        		objx = obj[0];
-		        objy = obj[1];
-		        objz = obj[2];
-		        convertToVoxel(objx, objy, objz, xObjMin, xObjMax, yObjMin, yObjMax, zObjMin, zObjMax, vox);
-		        voxX = vox[0];
-		        voxY = vox[1];
-		        voxZ = vox[2];
-			int test = voxels[voxX][voxY][voxZ];
-			filledVox << test << "\n";
-		        cout << voxX << " " << voxY << " " << voxZ << "\n";
-			if (voxels[voxX][voxY][voxZ] == 1){
-				//write voxel coordinates to file
-				filledVox << voxX << " " << voxY << " " << voxZ << endl;
-				numVox++;
-			}
-		}
-	}
-
-	//Determine the correct grid dimensions required and ensure voxel data fills 3D matrix:
-	int gridDim;
-	gridDim = ceil(pow(numVox, (1/3)));
-	int extras;
-	extras = pow(gridDim, 3) - numVox;
-	while (extras >= 0){
-		filledVox<< -42 << " " << -42 << " " << -42 << endl;
-		extras--;
-	}
-	filledVox.close();
-	cout << zcount;
 */
 	//Callback functions:
 	glutDisplayFunc(display);
