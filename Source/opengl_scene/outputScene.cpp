@@ -1,6 +1,7 @@
 //scene.cpp
 //Calina Copos & Afton Geil
 //EEC277 Final Project
+#define GL_GLEXT_PROTOTYPES
 #include <GL/glut.h>
 #include <math.h>
 #include "include/glm/glm.h"
@@ -121,7 +122,7 @@ void findMinMaxAO(void)
         int *ao;
 	ao = new int [winWidth*winHeight];
         ifstream results;
-        results.open("nonzero_all.dat", ios::in);
+        results.open("nonzero_filledVox.dat", ios::in);
         int coordIndex = 0;
 	int i = 0;
         while (!results.eof()){
@@ -152,11 +153,12 @@ void display(void)
 
 	glMatrixMode(GL_MODELVIEW);	//Matrix describing transformations
 	glLoadIdentity();
-	gluLookAt(0, 0, 2, 0, 0, 0, 0, 1, 0);	//point to look from, at, upward direction
+	gluLookAt(0, 0, 4, 0, 0, 0, 0, 1, 0);	//point to look from, at, upward direction
 
-//	glCallList(displayList);
+	glCallList(displayList);
 
 	glFlush();
+	glutSwapBuffers();
 
 	findMinMaxAO();
 
@@ -170,7 +172,7 @@ void display(void)
 	GLfloat ao;
 	GLfloat oldColour;
         ifstream results;
-        results.open("nonzero_all.dat", ios::in);
+        results.open("nonzero_filledVox.dat", ios::in);
         int coordIndex = 0;
         while (!results.eof()){
                 getline(results, str);
@@ -215,9 +217,10 @@ void display(void)
 		colour[0] = oldColour - ao;
 		colour[1] = *(&oldColour) - ao;
 		colour[2] = *(&oldColour) - ao;
-		glRasterPos3fv(obj);	//set the object space coordinate to occlude
+//		glRasterPos3fv(obj);	//set the object space coordinate to occlude
+//		glDrawPixels(1, 1, GL_RGB, GL_FLOAT, colour);
+		glWindowPos3fv(win);		//set the window position of the occuded pixel
 		glDrawPixels(1, 1, GL_RGB, GL_FLOAT, colour);
-//		glWindowPos3fv(win[0], win[1], win[2]);		//set the window position of the occuded pixel (need to update GL or get extra code for this)
         }
         results.close();
 
@@ -225,7 +228,7 @@ void display(void)
 
 	cout << "done";
 	glutSwapBuffers();
-	getchar();	//breakpoint
+//	getchar();	//breakpoint
 
 }
 
