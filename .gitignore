@@ -5,6 +5,8 @@
 *.so
 *.class
 *.com
+*.out
+*.aux
 
 # Packages #
 *.tar
