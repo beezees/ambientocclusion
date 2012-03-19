@@ -1,7 +1,7 @@
 C=g++ 
 CFLAGS=-g -Wall -I. -I/usr/X11/include
 LDFLAGS= -lstdc++ -L /usr/X11R6/lib/ -lglut -lGL -lGLU -lX11 -lXmu -lXi -lm -L /usr/lib -lpng12 -lz
-SOURCES=scene.cpp include/glm/glm.cpp
+SOURCES=outputScene.cpp include/glm/glm.cpp
 OBJECTS=$(SOURCES:.cpp=.o)
 EXECUTABLE=test
 
