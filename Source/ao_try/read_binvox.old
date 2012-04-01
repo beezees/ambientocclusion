@@ -42,13 +42,6 @@ static float scale;
 static char *sSDKname = "AOX";
 byte *voxels = 0;
 
-struct Voxel
-{
-   double x;
-   double y
-   double z;
-};
-
 //////////////////////////////////////////////////////////////////////////////////////////////////////
 // CUDA Helper Functions
 
@@ -211,13 +204,8 @@ int read_binvox(string filespec)
 
   size = width * height * depth;
   voxels = new byte[size];
-  Voxel *voxels_world = new Voxel[size];
   if (!voxels) {
     cout << "  error allocating memory" << endl;
-    return 0;
-  }
-  if (!voxels_world) {
-    cout << " error allocating memeory" << endl;
     return 0;
   }
 
@@ -239,19 +227,7 @@ int read_binvox(string filespec)
     if (input->good()) {
       end_index = index + count;
       if (end_index > size) return 0;
-      for(int i=index; i < end_index; i++) { 
-	// voxel index -> voxel coords
-	int y = i % width;
-	int z = (i / width) % height;
-	int x = i / (width * height);
-	// voxel coords -> world coords
-	double x_w = (double) x * scale/depth + tx + 0.000001;
-	double y_w = (double) y * scale/depth + ty + 0.000001;
-	double z_w = (double) z * scale/depth + tz + 0.000001;
-	
-	voxels_world[i].x = x_w; voxels_world[i].y = y_w; voxels_world[i].z = z_w;
-	voxels[i] = value;
-      }
+      for(int i=index; i < end_index; i++) voxels[i] = value;
       
       if (value) nr_voxels += count;
       index = end_index;
@@ -278,22 +254,6 @@ int read_binvox(string filespec)
      }
   }
   vox_coords.close();
-
-  //
-  // voxel world coords
-  //
-  ofstream world_coords("world_coords.dat", ios::out);
-  for(int i=0; i < depth; i++) {
-    for(int k=0; k < height; k++) {
-       for(int j=0; j < width; j++) {
-         int index = i * width * height + k * width + j;
-         if (voxels_world[index]) {
-           world_coords << voxels_world[i].x << " " << voxels_world[i].y << " " << voxels_world[i].z << endl; // order: x,y,z 
-	 }
-       }
-     }
-  }
-  world_coords.close();
 
   return 1;
 }
