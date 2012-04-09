@@ -122,7 +122,7 @@ void findMinMaxAO(void)
         int *ao;
 	ao = new int [winWidth*winHeight];
         ifstream results;
-        results.open("nonzero_filledVox.dat", ios::in);
+        results.open("result_all.dat", ios::in);
         int coordIndex = 0;
 	int i = 0;
         while (!results.eof()){
@@ -172,39 +172,49 @@ void display(void)
 	GLfloat ao;
 	GLfloat oldColour;
         ifstream results;
-        results.open("nonzero_filledVox.dat", ios::in);
+        ifstream coords;
+        results.open("result_all.dat", ios::in);
+	coords.open("world_coords.dat", ios::in);
         int coordIndex = 0;
-        while (!results.eof()){
+        while (!results.eof() || !coords.eof()){
                 getline(results, str);
                 istringstream results_iss(str);
                 while(results_iss >> item){
                         coordIndex++;
-                        if (coordIndex % 4 == 1) {
-                                vox[0] = item;
+                        //if (coordIndex % 4 == 1) {
+                        //        vox[0] = item;
 //				cout << item << endl;
-                        }
-                        if (coordIndex % 4 == 2) {
-                                vox[1] = item;
+                        //}
+                        //if (coordIndex % 4 == 2) {
+                        //        vox[1] = item;
 //				cout << item << endl;
-                        }
-                        if (coordIndex % 4 == 3){
-                                vox[2] = item;
+                        //}
+                        //if (coordIndex % 4 == 3){
+                        //        vox[2] = item;
 //				cout << item << endl;
-                        }
+                        //}
 			if (coordIndex % 4 == 0){
 				rawAO = item;
 //				cout << item << endl;
 			}
 		}
+		coordIndex=0;
 		ao = (rawAO - AOMin)/ (AOMax - AOMin);	//normalize AO values
-/*		cout << vox[0] << " "; 
-		cout << vox[1] << " "; 
-		cout << vox[2] << " ";
-		cout << ao << endl;
-*/		convertToObj(vox, obj);
-		objx = obj[0];
-		objy = obj[1];
-		objz = obj[2];
+		getline(coords, str);
+		istringstream coords_iss(str);
+		while (coords_iss >> item){
+			coordIndex++;
+			if (coordIndex % 3 == 1) 
+			  obj[0] = item;
+			if (coordIndex % 3 == 2) 
+			  obj[1] = item;
+			if (coordIndex % 3 == 0) 
+			  obj[2] = item;
+		}
+		//convertToObj(vox, obj);
+		//objx = obj[0];
+		//objy = obj[1];
+		//objz = obj[2];
 /*		cout << objx << " " << objy << " ";
 		cout << objz << endl;
 *///		GLfloat colour[] = {0, ao * 255.0f, ao * 255.0f};	//scale AO for 8-bit RGB colour
