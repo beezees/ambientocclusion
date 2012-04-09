@@ -1,4 +1,4 @@
-//scene.cpp
+//outputScene.cpp
 //Calina Copos & Afton Geil
 //EEC277 Final Project
 #define GL_GLEXT_PROTOTYPES
@@ -155,7 +155,7 @@ void display(void)
 	glLoadIdentity();
 	gluLookAt(0, 0, 4, 0, 0, 0, 0, 1, 0);	//point to look from, at, upward direction
 
-	glCallList(displayList);
+//	glCallList(displayList);
 
 	glFlush();
 	glutSwapBuffers();
