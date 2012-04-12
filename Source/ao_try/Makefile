@@ -33,7 +33,7 @@
 #
 ###############################################################################
 
-CUDA_SDK_PATH ?= /home/calinacopos/NVIDIA_GPU_Computing_SDK
+CUDA_SDK_PATH ?= /home/afton/NVIDIA_GPU_Computing_SDK
 CUDA_INSTALL_PATH ?= /usr/local/cuda
 
 CUBIN_ARCH_FLAG := 1

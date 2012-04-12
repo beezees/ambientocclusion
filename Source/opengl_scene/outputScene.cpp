@@ -27,7 +27,8 @@ int grid = 256;
 
 float objxMin, objxMax, objyMin, objyMax, objzMin, objzMax;
 
-GLfloat AOMin, AOMax;
+GLfloat AOMin = 999;
+GLfloat AOMax = 0;
 
 void init(void)
 {
@@ -90,57 +91,31 @@ void convertToObj(GLfloat vox[], GLfloat obj[])
 	return;
 }
 
-int intArrayMax(int array[], int numElements)
-{
-        int max = 0;
-        int m;
-        for (m = 0; m < numElements; m++){
-                if (array[m] > max){
-                        max = array[m];
-                }
-        }
-        return max;
-}
-
-int intArrayMin(int array[], int numElements)
-{
-        int min = sizeof(int);
-        int n;
-        for (n = 0; n < numElements; n++){
-                if (array[n] < min){
-                        min = array[n];
-                }
-        }
-        return min;
-}
-
 void findMinMaxAO(void)
 {
 
         string str;
         double item;
-        int *ao;
-	ao = new int [winWidth*winHeight];
-        ifstream results;
-        results.open("result_all.dat", ios::in);
+        ifstream aoresults;
+        aoresults.open("result_all.dat", ios::in);
         int coordIndex = 0;
-	int i = 0;
-        while (!results.eof()){
-                getline(results, str);
-                istringstream results_iss(str);
-                while(results_iss >> item){
+        while (!aoresults.eof()){
+                getline(aoresults, str);
+                istringstream aoresults_iss(str);
+                while(aoresults_iss >> item){
                         coordIndex++;
                         if (coordIndex % 4 == 0){
-                                ao[i] = item;
-				i++;
+				if (item > AOMax){
+					AOMax = item;
+				}
+				if (item < AOMin){
+					AOMin = item;
+				}
                         }
                 }
 	}
 
-	AOMin = intArrayMin(ao, i);
-	AOMax = intArrayMax(ao, i);
-
-	delete [] ao;
+	aoresults.close();
 }
 
 void display(void)
@@ -160,7 +135,8 @@ void display(void)
 	glFlush();
 	glutSwapBuffers();
 
-	findMinMaxAO();
+	cout << "Max AO:" << AOMax << " ";
+	cout << "Min AO:" << AOMin << endl;
 
 	string str;
 	GLfloat item;
@@ -175,6 +151,7 @@ void display(void)
         ifstream coords;
         results.open("result_all.dat", ios::in);
 	coords.open("world_coords.dat", ios::in);
+	printf ("read in files");
         int coordIndex = 0;
         while (!results.eof() || !coords.eof()){
                 getline(results, str);
@@ -200,6 +177,7 @@ void display(void)
 		}
 		coordIndex=0;
 		ao = (rawAO - AOMin)/ (AOMax - AOMin);	//normalize AO values
+		cout << "AO:" << ao << endl;
 		getline(coords, str);
 		istringstream coords_iss(str);
 		while (coords_iss >> item){
@@ -212,12 +190,12 @@ void display(void)
 			  obj[2] = item;
 		}
 		//convertToObj(vox, obj);
-		//objx = obj[0];
-		//objy = obj[1];
-		//objz = obj[2];
-/*		cout << objx << " " << objy << " ";
+		objx = obj[0];
+		objy = obj[1];
+		objz = obj[2];
+		cout << objx << " " << objy << " ";
 		cout << objz << endl;
-*///		GLfloat colour[] = {0, ao * 255.0f, ao * 255.0f};	//scale AO for 8-bit RGB colour
+//		GLfloat colour[] = {0, ao * 255.0f, ao * 255.0f};	//scale AO for 8-bit RGB colour
 //		cout << vox[0] << " "; 
 		convertToWindow(obj, win);
 //		cout << win[0] << " " << win[1] << " " << win[2] << endl;
@@ -326,6 +304,11 @@ int main(int argc, char** argv)
 		glColor4f(1.0, 0.0, 1.0, 1.0);
 		glmList(model, GLM_SMOOTH);
 	glEndList();
+
+	//Determine the minimum and maximum ambient occlusion values:
+	findMinMaxAO();
+	cout << "Max AO:" << AOMax << " ";
+	cout << "Min AO:" << AOMin << endl;
 
 	//Callback functions:
 	glutDisplayFunc(display);
